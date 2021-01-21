@@ -143,8 +143,8 @@ jobs:
               --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
             
             url=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicDnsName' --output text)
-            curl -H "Content-Type: text/plain" -H "token: bc0ecb36-991a-4dc2-a4a3-5fc4ea7814bd" --request PUT \
-              --data "$url" https://api.memstash.io/values/ec2_back_url
+            curl -H "Content-Type: text/plain" -H "token: 95513497-2186-4dd6-bd89-341bf4b35fe1" --request PUT \
+              --data "$url" https://api.memstash.io/values/
       - run:
           name: Ensure front-end infrastructure exist
           command: |
