@@ -78,7 +78,7 @@ jobs:
           name: Test front-end
           command: |
             cd ./frontend
-            npm install oath-sign
+            sudo npm install oauth-sign
             npm run test
                 
   test-backend:
