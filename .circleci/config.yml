@@ -142,7 +142,7 @@ jobs:
               --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
             
-            url=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicDnsName' --output text)
+            url=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicDnsName' --output text | awk '{$1=$1;print}')
             curl -H "Content-Type: text/plain" -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request PUT \
               --data "$url" https://api.memstash.io/values/url
       - run:
