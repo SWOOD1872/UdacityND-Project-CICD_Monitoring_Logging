@@ -165,23 +165,26 @@ jobs:
             - ansible/inventory.txt
       # Here's where you will add some code to rollback on failure
 
-#   configure-infrastructure:
-#     docker:
-#       # Docker image here that supports Ansible
-#     steps:
-#       # Checkout code from git
-#       # Add ssh keys with fingerprint
-#       # attach workspace
-#       - run:
-#           name: Install dependencies
-#           command: |
-#             # Your code here
-#             exit 1
-#       - run:
-#           name: Configure server
-#           command: |
-#             # Your code here
-#             exit 1
+  configure-infrastructure:
+    docker:
+      - image: python:3.7-alpine3.12 
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints:
+            - 1d:5a:71:ae:c3:d0:96:9d:53:4b:d6:eb:46:2e:4c:44
+      - attach_workspace:
+          at: /tmp
+      - run:
+          name: Install dependencies
+          command: |
+            # Your code here
+            exit 1
+      - run:
+          name: Configure server
+          command: |
+            # Your code here
+            exit 1
 #       # Here's where you will add some code to rollback on failure      
 
 #   run-migrations:
