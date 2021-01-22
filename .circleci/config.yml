@@ -187,7 +187,7 @@ jobs:
           command: |
             pwd
             ls -lar
-            ansible-playbook -i ansible/inventory.txt .circleci/ansible/configure-server.yml
+            ansible-playbook -i ansible/inventory.txt ansible/configure-server.yml
 #       # Here's where you will add some code to rollback on failure      
 
 #   run-migrations:
