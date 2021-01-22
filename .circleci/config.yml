@@ -158,7 +158,12 @@ jobs:
           command: |
             aws ec2 describe-instances \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --output text
+            aws ec2 describe-instances \
+              --query 'Reservations[*].Instances[*].PublicIpAddress' \
               --output text > .circleci/ansible/inventory.txt
+            echo "---"
+            cat .circleci/ansible/inventory.txt
       - persist_to_workspace:
           root: .circleci
           paths:
@@ -182,7 +187,7 @@ jobs:
       - run:
           name: Configure server
           command: |
-            ls -la /tmp/ansible
+            cat /tmp/ansible/inventory.txt
             echo "---"
             ansible-playbook -i /tmp/ansible/inventory.txt .circleci/ansible/configure-server.yml
 #       # Here's where you will add some code to rollback on failure      
