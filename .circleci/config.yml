@@ -187,6 +187,10 @@ jobs:
           command: |
             pwd
             ls -lar
+            ls -ltr ansible/inventory.txt
+            ls -ltr ansible/configure-server.yml
+            cat ansible/inventory.txt
+            cat ansible/configure-server.yml
             ansible-playbook -i ansible/inventory.txt ansible/configure-server.yml
 #       # Here's where you will add some code to rollback on failure      
 
