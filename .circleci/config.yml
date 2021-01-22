@@ -183,7 +183,6 @@ jobs:
             apk add --update ansible
       - run:
           name: Configure server
-          working_directory: /tmp
           command: |
             pwd
             ls -lar
