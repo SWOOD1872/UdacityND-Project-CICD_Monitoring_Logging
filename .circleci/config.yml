@@ -159,8 +159,8 @@ jobs:
             aws ec2 describe-instances \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
               --output text > .circleci/ansible/inventory.txt
-            ls -l
             pwd
+            ls -lar
       - persist_to_workspace:
           root: .circleci
           paths:
@@ -183,10 +183,10 @@ jobs:
             apk add --update ansible
       - run:
           name: Configure server
-          working_directory: ./backend
+          working_directory: /tmp
           command: |
-            ls -l
             pwd
+            ls -lar
             ansible-playbook -i ansible/inventory.txt .circleci/ansible/configure-server.yml
 #       # Here's where you will add some code to rollback on failure      
 
