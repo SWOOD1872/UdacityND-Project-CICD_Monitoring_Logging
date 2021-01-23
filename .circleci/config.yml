@@ -255,20 +255,28 @@ jobs:
           fingerprints:
             - 1d:5a:71:ae:c3:d0:96:9d:53:4b:d6:eb:46:2e:4c:44
       - attach_workspace:
-          at: /tmp
+          at: .
       - run:
           name: Install dependencies
           command: |
-            apk add --update ansible
+            apk add --update ansible tar gzip ansible nodejs npm
+            pip install awscli
       - run:
           name: Deploy backend
           command: |
-            pwd
-            ls -latr
-            echo "---"
-            ls -latr .circleci/
-            echo "---"
-            ls -latr backend/
+            envfile="backend/.env"
+            echo ENVIROMENT=production > $envfile
+            echo TYPEORM_CONNECTION=postgres >> $envfile
+            echo TYPEORM_MIGRATIONS_DIR=./src/migrations >> $envfile
+            echo TYPEORM_ENTITIES=./src/modules/domain/**/*.entity.ts >> $envfile
+            echo TYPEORM_MIGRATIONS=./src/migrations/*.ts >> $envfile
+            echo TYPEORM_HOST=$TYPEORM_HOST >> $envfile
+            echo TYPEORM_PORT=$TYPEORM_PORT >> $envfile
+            echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> $envfile
+            echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> $envfile
+            echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> $envfile
+            tar -cvf backend.tar backend
+            ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i ansible/inventory.txt .circleci/ansible/deploy-backend.yml
       # - destroy-environment  
 
 #   smoke-test:
@@ -342,16 +350,15 @@ workflows:
       #     requires: [build-backend]
       # - scan-frontend:
       #     requires: [build-frontend]
-      # - deploy-infrastructure
+      - deploy-infrastructure
       #     # requires: [test-frontend, test-backend, scan-frontend, scan-backend]
       #     requires: [build-frontend, build-backend]
-      # - configure-infrastructure:
-      #     requires: [deploy-infrastructure]
-      # - run-migrations:
-      #     requires: [configure-infrastructure]
-      # - deploy-frontend
-          # requires: [run-migrations]
-          # requires: [configure-infrastructure]
+      - configure-infrastructure:
+          requires: [deploy-infrastructure]
+      - run-migrations:
+          requires: [configure-infrastructure]
+      - deploy-frontend:
+          requires: [run-migrations, configure-infrastructure]
       - deploy-backend
       #     requires: [run-migrations]
       # - smoke-test:
