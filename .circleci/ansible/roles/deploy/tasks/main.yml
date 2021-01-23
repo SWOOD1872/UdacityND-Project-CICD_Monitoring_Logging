@@ -15,6 +15,20 @@
     production: yes
     state: present
 
+- name: "create the application directory"
+  become_user: ubuntu
+  become: yes
+  file:
+    path: ~/app
+    state: directory
+
+- name: "untar the backend app file"
+  become_user: ubuntu
+  become: yes
+  unarchive:
+    src: ~/project/backend.tar
+    dest: ~/app
+
 - name: "start PM2"
   become_user: ubuntu
   become: yes
