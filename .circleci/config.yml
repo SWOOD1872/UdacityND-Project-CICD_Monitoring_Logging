@@ -8,6 +8,7 @@ commands:
           name: Destroy environments
           when: on_fail
           command: |
+            aws s3 rm s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
             aws cloudformation delete-stack --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
             aws cloudformation delete-stack --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
 
@@ -24,10 +25,9 @@ commands:
   #           SUCCESS = 1
   #           if(( $SUCCESS==1 )); 
   #           then
-  #           #  cd ~/project/backend
-  #           #  npm install
-  #           #  Add revert code here. You can find this in the Getting Started section.
-  #             exit 1
+  #             npm install
+  #             cd backend
+  #             npm run migrations:revert
   #           fi
             
 jobs:
@@ -206,6 +206,12 @@ jobs:
             npm i
             npm install oauth-sign
             npm run migrations > migration.log
+            echo "---"
+            pwd
+            echo "---"
+            hostname
+            echo "---"
+            cat migrations.log
       - run:
             name: Send migration results to memstash
             working_directory: ./backend
@@ -216,6 +222,7 @@ jobs:
                 curl -H "Content-Type: text/plain" -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request PUT --data "Migration failed" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID}
               fi
       - destroy-environment
+      - revert-migrations
 
   deploy-frontend:
     docker:
@@ -248,7 +255,8 @@ jobs:
             bucketurl="$(echo "http://$bucket.s3-website-us-west-2.amazonaws.com")"
             echo $bucketurl
             curl -H "Content-Type: text/plain" -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request PUT --data "$bucketurl" https://api.memstash.io/values/bucketurl
-      # - destroy-environment
+      - destroy-environment
+      - revert-migrations
                     
   deploy-backend:
     docker:
@@ -282,7 +290,8 @@ jobs:
             echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> $envfile
             tar -cvf backend.tar backend
             ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i ansible/inventory.txt .circleci/ansible/deploy-backend.yml
-      # - destroy-environment  
+      - destroy-environment
+      - revert-migrations
 
   smoke-test:
     docker:
@@ -299,12 +308,10 @@ jobs:
           name: Get backend url
           command: |
             export API_URL=$(echo "https://$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request GET https://api.memstash.io/values/url):3030")
-            echo $API_URL
       - run:
           name: Backend smoke test.
           command: |
             BACKEND_URL="http://$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request GET https://api.memstash.io/values/backendip):3030"
-            echo $BACKEND_URL
             curl -vvv "$BACKEND_URL/api/status"
       - run:
           name: Frontend smoke test.
@@ -312,12 +319,12 @@ jobs:
             export bucketurl=$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request GET https://api.memstash.io/values/bucketurl)
             if curl -s ${bucketurl} | grep "Welcome"
             then
-              exit 1
+              echo "frontend smoke test success"
             else
-              echo "SCREENSHOT06"
               exit 1
             fi
-      # Here's where you will add some code to rollback on failure  
+      - destroy-environment
+      - revert-migrations
 
 #   cloudfront-update:
 #     docker:
@@ -372,7 +379,7 @@ workflows:
       #     requires: [build-frontend, build-backend]
       # - configure-infrastructure:
       #     requires: [deploy-infrastructure]
-      # - run-migrations:
+      - run-migrations
       #     requires: [configure-infrastructure]
       # - deploy-frontend:
       #     requires: [run-migrations]
