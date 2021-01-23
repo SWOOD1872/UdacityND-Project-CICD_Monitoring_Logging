@@ -267,6 +267,8 @@ jobs:
             ls -latr
             echo "---"
             ls -latr .circleci/
+            echo "---"
+            ls -latr backend/
       # - destroy-environment  
 
 #   smoke-test:
