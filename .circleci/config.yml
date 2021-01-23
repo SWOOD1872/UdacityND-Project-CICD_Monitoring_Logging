@@ -312,10 +312,10 @@ jobs:
             export bucketurl=$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request GET https://api.memstash.io/values/bucketurl)
             if curl -s ${bucketurl} | grep "Welcome"
             then
-              return 1
+              exit 1
             else
               echo "SCREENSHOT06"
-              return 1
+              exit 1
             fi
       # Here's where you will add some code to rollback on failure  
 
