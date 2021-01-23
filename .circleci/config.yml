@@ -211,7 +211,7 @@ jobs:
             echo "---"
             hostname
             echo "---"
-            cat migrations.log
+            cat migration.log
       - run:
             name: Send migration results to memstash
             working_directory: ./backend
