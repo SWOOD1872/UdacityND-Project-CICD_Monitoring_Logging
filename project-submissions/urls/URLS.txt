@@ -1,1 +1,2 @@
 URL01: https://github.com/SWOOD1872/UdacityND-Project-CICD_Monitoring_Logging
+URL02: http://udapeople-e5e7aa4.s3-website-us-west-2.amazonaws.com/#/employees

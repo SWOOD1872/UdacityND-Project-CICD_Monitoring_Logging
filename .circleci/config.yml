@@ -165,7 +165,7 @@ jobs:
 
   configure-infrastructure:
     docker:
-      - image: python:3.7-alpine3.12 
+      - image: python:3.7-alpine3.12
     steps:
       - checkout
       - add_ssh_keys:
@@ -246,22 +246,25 @@ jobs:
             curl -H "Content-Type: text/plain" -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request PUT --data "$bucketurl" https://api.memstash.io/values/bucketurl
       # - destroy-environment
                     
-#   deploy-backend:
-#     docker:
-#       # Docker image here that supports Ansible
-#     steps:
-#       # Checkout code from git
-#       # Add ssh keys with fingerprint
-#       # attach workspace
-#       - run:
-#           name: Install dependencies
-#           command: |
-#             # your code here
-#       - run:
-#           name: Deploy backend
-#           command: |
-#             # your code here
-#       # Here's where you will add some code to rollback on failure  
+  deploy-backend:
+    docker:
+      - image: python:3.7-alpine3.12
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints:
+            - 1d:5a:71:ae:c3:d0:96:9d:53:4b:d6:eb:46:2e:4c:44
+      - attach_workspace:
+          at: /tmp
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --update ansible
+      - run:
+          name: Deploy backend
+          command: |
+            ls -latr
+      # - destroy-environment  
 
 #   smoke-test:
 #     docker:
@@ -344,7 +347,7 @@ workflows:
       - deploy-frontend
           # requires: [run-migrations]
           # requires: [configure-infrastructure]
-      # - deploy-backend:
+      - deploy-backend
       #     requires: [run-migrations]
       # - smoke-test:
       #     requires: [deploy-backend, deploy-frontend]
