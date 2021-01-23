@@ -309,7 +309,7 @@ jobs:
       - run:
           name: Frontend smoke test.
           command: |
-            export bucketurl=$(echo "http://$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request GET https://api.memstash.io/values/bucketurl):3030")
+            export bucketurl=$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request GET https://api.memstash.io/values/bucketurl)
             echo $bucketurl
             curl -vvv "$bucketurl"
       # Here's where you will add some code to rollback on failure  
@@ -362,19 +362,19 @@ workflows:
       #     requires: [build-backend]
       # - scan-frontend:
       #     requires: [build-frontend]
-      - deploy-infrastructure
+      # - deploy-infrastructure
       #     # requires: [test-frontend, test-backend, scan-frontend, scan-backend]
       #     requires: [build-frontend, build-backend]
-      - configure-infrastructure:
-          requires: [deploy-infrastructure]
-      - run-migrations:
-          requires: [configure-infrastructure]
-      - deploy-frontend:
-          requires: [run-migrations]
-      - deploy-backend:
-          requires: [run-migrations, deploy-frontend]
-      - smoke-test:
-          requires: [deploy-backend, deploy-frontend]
+      # - configure-infrastructure:
+      #     requires: [deploy-infrastructure]
+      # - run-migrations:
+      #     requires: [configure-infrastructure]
+      # - deploy-frontend:
+      #     requires: [run-migrations]
+      # - deploy-backend:
+      #     requires: [run-migrations, deploy-frontend]
+      - smoke-test
+          # requires: [deploy-backend, deploy-frontend]
       # - cloudfront-update:
       #     requires: [smoke-test]
       # - cleanup:
