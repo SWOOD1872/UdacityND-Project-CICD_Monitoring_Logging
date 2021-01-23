@@ -263,7 +263,10 @@ jobs:
       - run:
           name: Deploy backend
           command: |
+            pwd
             ls -latr
+            echo "---"
+            ls -latr .circleci/
       # - destroy-environment  
 
 #   smoke-test:
@@ -344,7 +347,7 @@ workflows:
       #     requires: [deploy-infrastructure]
       # - run-migrations:
       #     requires: [configure-infrastructure]
-      - deploy-frontend
+      # - deploy-frontend
           # requires: [run-migrations]
           # requires: [configure-infrastructure]
       - deploy-backend
