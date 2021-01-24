@@ -124,13 +124,9 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Install tar
+          name: Install dependencies
           command: |
-            yum install -y tar
-      - run:
-          name: Install gzip
-          command: |
-            yum install -y gzip
+            yum install -y tar gzip
       - run:
           name: Ensure back-end infrastructure exists
           command: |
@@ -143,6 +139,15 @@ jobs:
             url=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicDnsName' --output text | awk '{$1=$1;print}')
             curl -H "Content-Type: text/plain" -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request PUT \
               --data "$url" https://api.memstash.io/values/url
+
+            echo "////////////////////////////////////////////////////////////////"
+            echo "DEBUGGING:"
+            echo "ec2 describe-instances dns name........"
+            echo $url
+            echo "==="
+            echo "URL in memstash........................"
+            echo "$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request GET https://api.memstash.io/values/url)"
+            echo "////////////////////////////////////////////////////////////////"
       - run:
           name: Ensure front-end infrastructure exist
           command: |
@@ -158,6 +163,14 @@ jobs:
             echo $backendIP >> .circleci/ansible/inventory.txt
             curl -H "Content-Type: text/plain" -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request PUT \
               --data "$backendIP" https://api.memstash.io/values/backendip
+            echo "////////////////////////////////////////////////////////////////"
+            echo "DEBUGGING:"
+            echo "ec2 describe-instances ip........"
+            echo $backendIP
+            echo "==="
+            echo "IP in memstash..................."
+            echo "$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request GET https://api.memstash.io/values/backendip)"
+            echo "////////////////////////////////////////////////////////////////"
       - persist_to_workspace:
           root: .circleci
           paths:
@@ -234,6 +247,11 @@ jobs:
           name: Get backend url
           command: |
             export API_URL=$(echo "https://$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request GET https://api.memstash.io/values/url):3030")
+            echo "////////////////////////////////////////////////////////////////"
+            echo "DEBUGGING:"
+            echo "API URL in memstash..................."
+            echo $API_URL
+            echo "////////////////////////////////////////////////////////////////"
       - run:
           name: Deploy frontend objects
           working_directory: ./frontend
@@ -245,6 +263,17 @@ jobs:
             aws s3 sync dist s3://${bucket}/
             bucketurl="$(echo "http://$bucket.s3-website-us-west-2.amazonaws.com")"
             curl -H "Content-Type: text/plain" -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request PUT --data "$bucketurl" https://api.memstash.io/values/bucketurl
+            echo "////////////////////////////////////////////////////////////////"
+            echo "DEBUGGING:"
+            echo "API URL in memstash..................."
+            echo $API_URL
+            echo "==="
+            echo "aws list-buckets......................"
+            echo $bucket
+            echo "==="
+            echo "bucketurl............................."
+            echo $bucketurl
+            echo "////////////////////////////////////////////////////////////////"
       - destroy-environment
                     
   deploy-backend:
@@ -299,16 +328,26 @@ jobs:
       - run:
           name: Get backend url
           command: |
-            export API_URL=$(echo "https://$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request GET https://api.memstash.io/values/url):3030" | head -1)
+            export API_URL=$(echo "https://$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request GET https://api.memstash.io/values/url):3030")
       - run:
           name: Backend smoke test.
           command: |
-            BACKEND_URL="http://$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request GET https://api.memstash.io/values/backendip):3030"
+            BACKEND_URL="http://$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request GET https://api.memstash.io/values/backendip | head -1):3030"
+            echo "////////////////////////////////////////////////////////////////"
+            echo "DEBUGGING:"
+            echo "BACKEND URL..................."
+            echo $BACKEND_URL
+            echo "////////////////////////////////////////////////////////////////"
             curl "$BACKEND_URL/api/status"
       - run:
           name: Frontend smoke test.
           command: |
             export bucketurl=$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request GET https://api.memstash.io/values/bucketurl)
+            echo "////////////////////////////////////////////////////////////////"
+            echo "DEBUGGING:"
+            echo "bucket url..................."
+            echo $bucketurl
+            echo "////////////////////////////////////////////////////////////////"
             if curl -s ${bucketurl} | grep "Welcome"
             then
               echo "FRONTEND SMOKE TEST SUCCESS"
