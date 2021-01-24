@@ -363,10 +363,10 @@ jobs:
       - image: amazon/aws-cli
     steps:
       - checkout
-      - run:
-          name: Install dependencies
-          command: |
-            yum install -y awk
+      # - run:
+      #     name: Install dependencies
+      #     command: |
+      #       yum install -y awk
       - run:
           name: Update cloudfront distribution
           command: |
@@ -420,19 +420,19 @@ workflows:
       #     requires: [build-backend]
       # - scan-frontend:
       #     requires: [build-frontend]
-      - deploy-infrastructure
-      #     requires: [build-frontend, build-backend]
-      - configure-infrastructure:
-          requires: [deploy-infrastructure]
-      - run-migrations:
-          requires: [configure-infrastructure]
-      - deploy-frontend:
-          requires: [run-migrations]
-      - deploy-backend:
-          requires: [deploy-frontend]
-      - smoke-test:
-          requires: [deploy-frontend, deploy-backend]
-      - cloudfront-update:
-          requires: [smoke-test]
+      # - deploy-infrastructure
+      # #     requires: [build-frontend, build-backend]
+      # - configure-infrastructure:
+      #     requires: [deploy-infrastructure]
+      # - run-migrations:
+      #     requires: [configure-infrastructure]
+      # - deploy-frontend:
+      #     requires: [run-migrations]
+      # - deploy-backend:
+      #     requires: [deploy-frontend]
+      # - smoke-test:
+      #     requires: [deploy-frontend, deploy-backend]
+      - cloudfront-update
+          # requires: [smoke-test]
       # - cleanup:
       #     requires: [cloudfront-update]
