@@ -12,35 +12,21 @@ commands:
             aws cloudformation delete-stack --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
             aws cloudformation delete-stack --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
 
-  # destroy-environment:
-  #   description: Destroy back-end and front-end cloudformation stacks given a workflow ID.  
-  #   steps:
-  #     - run:
-  #         name: Destroy environments
-  #         when: on_fail
-  #         command: |
-  #           aws s3 rm s3://udapeople-f2b0c51 --recursive
-  #           aws cloudformation delete-stack --stack-name udapeople-backend-f2b0c51
-  #           aws cloudformation delete-stack --stack-name udapeople-frontend-f2b0c51
+  revert-migrations:
+    description: Revert the last migration if successfully run in the current workflow.    
+    steps:
+      - run:
+          name: Revert migrations
+          when: on_fail
+          command: |
+            SUCCESS=`curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request GET https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID}`
+            if [[ $SUCCESS == "Migration Successful" ]];
+            then
+               cd backend
+               npm install
+               npm run migrations:revert
+            fi
 
-  # revert-migrations:
-  #   description: Revert the last migration if successfully run in the current workflow.
-  #   parameters:
-  #     # Add parameter here     
-  #   steps:
-  #     - run:
-  #         name: Revert migrations
-  #         # Add when this will run
-  #         command: |
-  #           # Curl command here to see if there was a successful migration associated with the workflow id, store result in SUCCESS variable
-  #           SUCCESS = 1
-  #           if(( $SUCCESS==1 )); 
-  #           then
-  #             npm install
-  #             cd backend
-  #             npm run migrations:revert
-  #           fi
-            
 jobs:
   build-frontend:
     docker:
@@ -231,7 +217,6 @@ jobs:
                 curl -H "Content-Type: text/plain" -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request PUT --data "Migration failed" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID}
               fi
       - destroy-environment
-      # - revert-migrations
 
   deploy-frontend:
     docker:
@@ -265,7 +250,6 @@ jobs:
             echo $bucketurl
             curl -H "Content-Type: text/plain" -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request PUT --data "$bucketurl" https://api.memstash.io/values/bucketurl
       - destroy-environment
-      # - revert-migrations
                     
   deploy-backend:
     docker:
@@ -300,7 +284,6 @@ jobs:
             tar -cvf backend.tar backend
             ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i ansible/inventory.txt .circleci/ansible/deploy-backend.yml
       - destroy-environment
-      # - revert-migrations
 
   smoke-test:
     docker:
@@ -334,10 +317,11 @@ jobs:
             then
               echo "frontend smoke test success"
             else
+              echo "SCREENSHOT07 - FAIL THE FRONT END SMOKE TEST INTENTIONALLY"
               exit 1
             fi
       - destroy-environment
-      # - revert-migrations
+      - revert-migrations
 
 #   cloudfront-update:
 #     docker:
@@ -388,7 +372,6 @@ workflows:
       # - scan-frontend:
       #     requires: [build-frontend]
       - deploy-infrastructure
-      #     # requires: [test-frontend, test-backend, scan-frontend, scan-backend]
       #     requires: [build-frontend, build-backend]
       - configure-infrastructure:
           requires: [deploy-infrastructure]
@@ -397,7 +380,7 @@ workflows:
       - deploy-frontend:
           requires: [run-migrations]
       - deploy-backend:
-          requires: [run-migrations, deploy-frontend]
+          requires: [deploy-frontend]
       - smoke-test:
           requires: [deploy-frontend, deploy-backend]
       # - cloudfront-update:
