@@ -152,14 +152,14 @@ jobs:
             ./backip.sh >> .circleci/ansible/inventory.txt
             backendip=$(./backip.sh)
             curl -H "Content-Type: text/plain" -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request PUT --data "$backendip" \
-              https://api.memstash.io/values/backendip_${CIRCLE_WORKFLOW_ID}
+              https://api.memstash.io/values/backendip_${CIRCLE_WORKFLOW_ID:0:7}
             
             cwid2=$(echo "aws ec2 describe-instances --filters 'Name=tag:project,Values="udapeople-backend_${CIRCLE_WORKFLOW_ID:0:7}"' \
               --query 'Reservations[*].Instances[*].PublicDnsName' --output text")
             echo $cwid2 > backurl.sh; chmod 755 backurl.sh
             backendurl=$(./backurl.sh)
             curl -H "Content-Type: text/plain" -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request PUT --data "$backendurl" \
-              https://api.memstash.io/values/url_${CIRCLE_WORKFLOW_ID}
+              https://api.memstash.io/values/url_${CIRCLE_WORKFLOW_ID:0:7}
       - persist_to_workspace:
           root: .circleci
           paths:
@@ -213,9 +213,11 @@ jobs:
             working_directory: ./backend
             command: |
               if [[ $(grep -i "has been executed successfully" migration.log | wc -l) -ge 1 ]]; then
-                curl -H "Content-Type: text/plain" -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request PUT --data "Migration successful" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID}
+                curl -H "Content-Type: text/plain" -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request PUT \
+                  --data "Migration successful" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID:0:7}
               else
-                curl -H "Content-Type: text/plain" -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request PUT --data "Migration failed" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID}
+                curl -H "Content-Type: text/plain" -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request PUT \
+                  --data "Migration failed" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID:0:7}
               fi
       - destroy-environment
 
@@ -235,7 +237,7 @@ jobs:
       - run:
           name: Get backend url
           command: |
-            url1="$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request GET https://api.memstash.io/values/url_${CIRCLE_WORKFLOW_ID}:0:7})"
+            url1="$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request GET https://api.memstash.io/values/url_${CIRCLE_WORKFLOW_ID:0:7})"
             export API_URL=$(echo "https://${url1}:3030")
             echo "////////////////////////////////////////////////////////////////"
             echo "DEBUGGING:"
@@ -246,13 +248,15 @@ jobs:
           name: Deploy frontend objects
           working_directory: ./frontend
           command: |
-            export API_URL=$(echo "https://$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request GET https://api.memstash.io/values/url_${CIRCLE_WORKFLOW_ID}):3030")
+            export API_URL=$(echo "https://$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request GET \
+              https://api.memstash.io/values/url_${CIRCLE_WORKFLOW_ID:0:7}):3030")
             npm i
             npm run build
             bucket=$(echo "udapeople-${CIRCLE_WORKFLOW_ID:0:7}")
             aws s3 sync dist s3://${bucket}/
             bucketurl="$(echo "http://$bucket.s3-website-us-west-2.amazonaws.com")"
-            curl -H "Content-Type: text/plain" -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request PUT --data "$bucketurl" https://api.memstash.io/values/bucketurl
+            curl -H "Content-Type: text/plain" -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request PUT \
+              --data "$bucketurl" https://api.memstash.io/values/bucketurl
             echo "////////////////////////////////////////////////////////////////"
             echo "DEBUGGING:"
             echo "API URL in memstash..................."
@@ -318,12 +322,14 @@ jobs:
       - run:
           name: Get backend url
           command: |
-            export API_URL=$(echo "https://$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request GET https://api.memstash.io/values/url_${CIRCLE_WORKFLOW_ID}):3030")
+            export API_URL=$(echo "https://$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request GET \
+              https://api.memstash.io/values/url_${CIRCLE_WORKFLOW_ID:0:7}):3030")
             echo $API_URL
       - run:
           name: Backend smoke test.
           command: |
-            BACKEND_URL="http://$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request GET https://api.memstash.io/values/backendip_${CIRCLE_WORKFLOW_ID} | head -1):3030"
+            BACKEND_URL="http://$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request GET \
+              https://api.memstash.io/values/backendip_${CIRCLE_WORKFLOW_ID:0:7} | head -1):3030"
             echo "////////////////////////////////////////////////////////////////"
             echo "DEBUGGING:"
             echo "BACKEND URL..................."
