@@ -239,11 +239,6 @@ jobs:
           command: |
             url1="$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request GET https://api.memstash.io/values/url_${CIRCLE_WORKFLOW_ID:0:7})"
             export API_URL=$(echo "https://${url1}:3030")
-            echo "////////////////////////////////////////////////////////////////"
-            echo "DEBUGGING:"
-            echo "API URL in memstash..................."
-            echo $API_URL
-            echo "////////////////////////////////////////////////////////////////"
       - run:
           name: Deploy frontend objects
           working_directory: ./frontend
@@ -257,17 +252,6 @@ jobs:
             bucketurl="$(echo "http://$bucket.s3-website-us-west-2.amazonaws.com")"
             curl -H "Content-Type: text/plain" -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request PUT \
               --data "$bucketurl" https://api.memstash.io/values/bucketurl
-            echo "////////////////////////////////////////////////////////////////"
-            echo "DEBUGGING:"
-            echo "API URL in memstash..................."
-            echo $API_URL
-            echo "==="
-            echo "aws list-buckets......................"
-            echo $bucket
-            echo "==="
-            echo "bucketurl............................."
-            echo $bucketurl
-            echo "////////////////////////////////////////////////////////////////"
       - destroy-environment
                     
   deploy-backend:
@@ -330,11 +314,6 @@ jobs:
           command: |
             BACKEND_URL="http://$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request GET \
               https://api.memstash.io/values/backendip_${CIRCLE_WORKFLOW_ID:0:7} | head -1):3030"
-            echo "////////////////////////////////////////////////////////////////"
-            echo "DEBUGGING:"
-            echo "BACKEND URL..................."
-            echo $BACKEND_URL
-            echo "////////////////////////////////////////////////////////////////"
             curl "$BACKEND_URL/api/status"
       - run:
           name: Frontend smoke test.
@@ -396,8 +375,6 @@ jobs:
               --request GET https://api.memstash.io/values/oldworkflowid_${CIRCLE_WORKFLOW_ID:0:7})
             export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
                 --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
-            echo "OldWorkflowID ======= $OldWorkflowID"
-            echo "STACKS ======= $STACKS"
       - run:
           name: Remove old stacks and files
           command: |
@@ -405,9 +382,6 @@ jobs:
               --request GET https://api.memstash.io/values/oldworkflowid_${CIRCLE_WORKFLOW_ID:0:7})
             export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
                 --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
-
-            echo "OldWorkflowID ======= $OldWorkflowID"
-            echo "STACKS ======= $STACKS"
 
             if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
             then
@@ -435,7 +409,7 @@ workflows:
           filters:
             branches:
               only:
-                - master
+                - main
       - configure-infrastructure:
           requires: [deploy-infrastructure]
       - run-migrations:
