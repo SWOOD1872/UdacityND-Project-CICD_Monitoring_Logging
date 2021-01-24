@@ -408,7 +408,7 @@ jobs:
 
             echo "OldWorkflowID ======= $OldWorkflowID"
             echo "STACKS ======= $STACKS"
- 
+
             if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
             then
               echo "DELETING THE OLD STACKS AND S3 BUCKET (BLUE/GREEN DEPLOY)"
