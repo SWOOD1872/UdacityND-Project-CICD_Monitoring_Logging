@@ -399,6 +399,7 @@ jobs:
               echo "//////////////////////////////////////////////////////////////////"
               echo "DEBUGGING:"
               echo "aws s3 rm \"s3://udapeople-${OldWorkflowID}\" --recursive"
+              echo $OldWorkflowID
               echo "//////////////////////////////////////////////////////////////////"
               aws s3 rm "s3://udapeople-${OldWorkflowID}" --recursive
               aws cloudformation delete-stack --stack-name udapeople-backend-${OldWorkflowID}
