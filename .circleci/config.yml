@@ -393,6 +393,9 @@ jobs:
       - run:
           name: Remove old stacks and files
           command: |
+            export OldWorkflowID="$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" \
+                --request GET https://api.memstash.io/values/oldworkflowid | awk '{print $1}')"
+
             if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
             then
               echo "DELETING THE OLD STACKS AND S3 BUCKET (BLUE/GREEN DEPLOY)"
