@@ -136,7 +136,7 @@ jobs:
               --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
             
-            url=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicDnsName' --output text | awk '{$1=$1;print}')
+            url=$(aws ec2 describe-instances --query 'Reservations[*].Instances[0].PublicDnsName' --output text | awk '{$1=$1;print}')
             curl -H "Content-Type: text/plain" -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request PUT \
               --data "$url" https://api.memstash.io/values/url
 
@@ -159,7 +159,7 @@ jobs:
       - run:
           name: Add back-end ip to ansible inventory
           command: |
-            backendIP="$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --output text)"
+            backendIP="$(aws ec2 describe-instances --query 'Reservations[*].Instances[0].PublicIpAddress' --output text)"
             echo $backendIP >> .circleci/ansible/inventory.txt
             curl -H "Content-Type: text/plain" -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request PUT \
               --data "$backendIP" https://api.memstash.io/values/backendip
@@ -363,22 +363,22 @@ jobs:
       - image: amazon/aws-cli
     steps:
       - checkout
-      # - run:
-      #     name: Install dependencies
-      #     command: |
-      #       # your code here
+      - run:
+          name: Install dependencies
+          command: |
+            yum install -y awk
       - run:
           name: Update cloudfront distribution
           command: |
-            export oldworkflowid=$(aws cloudformation list-exports --query "Exports[?Name==`WorkflowID`].Value" \
-              --no-paginate --output text)
+            export oldworkflowid=$(aws cloudformation list-stacks --query "StackSummaries[-2].StackName" \
+              --stack-status-filter CREATE_COMPLETE --no-paginate --output text | awk -F '-' '{print $3}')
             export oldstacklist=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
               --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
 
             aws cloudformation deploy \
               --template-file .circleci/files/cloudfront.yml \
               --tags project=udapeople \
-              --stack-name "udapeople-cloudfront" \
+              --stack-name "UdacityNDP3UdaPeople" \
               --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0-7}"
 
             if [[ “${oldstacklist[@]}” =~ “${oldworkflowid}” ]]; then
