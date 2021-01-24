@@ -203,10 +203,6 @@ jobs:
             npm i > npminstall.log
             npm install oauth-sign >> npminstall.log
             npm run migrations > migration.log
-            echo "---"
-            pwd
-            echo "---"
-            cat migration.log
       - run:
             name: Send migration results to memstash
             working_directory: ./backend
@@ -235,7 +231,6 @@ jobs:
           name: Get backend url
           command: |
             export API_URL=$(echo "https://$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request GET https://api.memstash.io/values/url):3030")
-            echo $API_URL
       - run:
           name: Deploy frontend objects
           working_directory: ./frontend
@@ -244,10 +239,8 @@ jobs:
             npm i
             npm run build
             bucket="$(aws s3api list-buckets --query "Buckets[0].Name" --output text | awk '{$1=$1;print}')"
-            echo $bucket
             aws s3 sync dist s3://${bucket}/
             bucketurl="$(echo "http://$bucket.s3-website-us-west-2.amazonaws.com")"
-            echo $bucketurl
             curl -H "Content-Type: text/plain" -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request PUT --data "$bucketurl" https://api.memstash.io/values/bucketurl
       - destroy-environment
                     
@@ -308,16 +301,18 @@ jobs:
           name: Backend smoke test.
           command: |
             BACKEND_URL="http://$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request GET https://api.memstash.io/values/backendip):3030"
-            curl -vvv "$BACKEND_URL/api/status"
+            curl "$BACKEND_URL/api/status"
       - run:
           name: Frontend smoke test.
           command: |
             export bucketurl=$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request GET https://api.memstash.io/values/bucketurl)
             if curl -s ${bucketurl} | grep "Welcome"
             then
-              echo "frontend smoke test success"
-            else
+              echo "FRONTEND SMOKE TEST SUCCESS"
               echo "SCREENSHOT07 - FAIL THE FRONT END SMOKE TEST INTENTIONALLY"
+              exit 1
+            else
+              echo "FRONTEND SMOKE TEST FAIL"
               exit 1
             fi
       - destroy-environment
