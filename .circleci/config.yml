@@ -371,7 +371,7 @@ jobs:
               --no-paginate --output text)
             echo "///////////////////////////////"
             echo $oldworkflowid
-            echo $CIRCLE_WORKFLOW_ID
+            echo "${CIRCLE_WORKFLOW_ID:0:7}"
             echo "///////////////////////////////"
             export cfstacks=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
               --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
@@ -380,7 +380,7 @@ jobs:
               --template-file .circleci/files/cloudfront.yml \
               --tags project=udapeople \
               --stack-name "UdacityNDP3UdaPeople" \
-              --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0-7}"
+              --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}"
 
             if [[ “${cfstacks[@]}” =~ “${oldworkflowid}” ]]; then
               aws s3 rm s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
