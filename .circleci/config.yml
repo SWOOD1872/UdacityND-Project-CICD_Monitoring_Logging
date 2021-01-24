@@ -299,7 +299,7 @@ jobs:
       - run:
           name: Get backend url
           command: |
-            export API_URL=$(echo "https://$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request GET https://api.memstash.io/values/url):3030")
+            export API_URL=$(echo "https://$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request GET https://api.memstash.io/values/url):3030" | head -1)
       - run:
           name: Backend smoke test.
           command: |
