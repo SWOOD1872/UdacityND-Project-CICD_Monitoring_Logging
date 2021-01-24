@@ -1,6 +1,17 @@
 version: 2.1
 
 commands:
+  # destroy-environment:
+  #   description: Destroy back-end and front-end cloudformation stacks given a workflow ID.  
+  #   steps:
+  #     - run:
+  #         name: Destroy environments
+  #         when: on_fail
+  #         command: |
+  #           aws s3 rm s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
+  #           aws cloudformation delete-stack --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
+  #           aws cloudformation delete-stack --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
+  #           # f2b0c51
   destroy-environment:
     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.  
     steps:
@@ -8,9 +19,9 @@ commands:
           name: Destroy environments
           when: on_fail
           command: |
-            aws s3 rm s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
-            aws cloudformation delete-stack --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
-            aws cloudformation delete-stack --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
+            aws s3 rm s3://udapeople-f2b0c51 --recursive
+            aws cloudformation delete-stack --stack-name udapeople-backend-f2b0c51
+            aws cloudformation delete-stack --stack-name udapeople-frontend-f2b0c51
 
   # revert-migrations:
   #   description: Revert the last migration if successfully run in the current workflow.
@@ -318,6 +329,7 @@ jobs:
             if curl -s ${bucketurl} | grep "Welcome"
             then
               echo "frontend smoke test success"
+              exit 1
             else
               exit 1
             fi
@@ -377,14 +389,14 @@ workflows:
       #     requires: [build-frontend, build-backend]
       # - configure-infrastructure:
       #     requires: [deploy-infrastructure]
-      - run-migrations
+      # - run-migrations
       #     requires: [configure-infrastructure]
       # - deploy-frontend:
       #     requires: [run-migrations]
       # - deploy-backend:
       #     requires: [run-migrations, deploy-frontend]
-      - smoke-test:
-          requires: [run-migrations]
+      - smoke-test
+          # requires: [run-migrations]
       # - cloudfront-update:
       #     requires: [smoke-test]
       # - cleanup:
