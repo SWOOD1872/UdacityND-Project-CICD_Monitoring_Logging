@@ -400,20 +400,19 @@ jobs:
   #     - run:
   #         name: Get old stack workflow id
   #         command: |
-  #           export OldWorkflowID="$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" \
-  #             --request GET https://api.memstash.io/values/oldworkflowid | awk '{print $1}')"
+  #           export OldWorkflowID=$(aws cloudformation \
+  #               list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
+  #               --no-paginate --output text)
   #           export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
-  #             --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
+  #               --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
   #     - run:
   #         name: Remove old stacks and files
   #         command: |
-  #           echo $OldWorkflowID
-  #           echo $STACKS
-
-  #           export OldWorkflowID="$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" \
-  #               --request GET https://api.memstash.io/values/oldworkflowid | awk '{print $1}')"
+  #           export OldWorkflowID=$(aws cloudformation \
+  #               list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
+  #               --no-paginate --output text)
   #           export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
-  #             --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
+  #               --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
 
   #           echo $OldWorkflowID
   #           echo $STACKS
@@ -421,49 +420,36 @@ jobs:
   #           if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
   #           then
   #             echo "DELETING THE OLD STACKS AND S3 BUCKET (BLUE/GREEN DEPLOY)"
-  #             echo "//////////////////////////////////////////////////////////////////"
-  #             echo "DEBUGGING:"
-  #             echo "aws s3 rm \"s3://udapeople-${OldWorkflowID}\" --recursive"
-  #             echo $OldWorkflowID
-  #             echo $STACKS
-  #             echo "//////////////////////////////////////////////////////////////////"
   #             aws s3 rm "s3://udapeople-${OldWorkflowID}" --recursive
   #             aws cloudformation delete-stack --stack-name udapeople-backend-${OldWorkflowID}
   #             aws cloudformation delete-stack --stack-name udapeople-frontend-${OldWorkflowID}
   #           fi
 
-  cleanup:
+cleanup:
     docker:
-      - image: amazon/aws-cli
+      - image: cimg/base:2020.01 
     steps:
       - checkout
       - run:
-          name: Get old stack workflow id
+          name: Get the new and old stack ID's
           command: |
-            export OldWorkflowID=$(aws cloudformation \
-                list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
-                --no-paginate --output text)
-            export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
-                --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
+            export stacks=$(aws cloudformation list-stacks --query "StackSummaries[*].StackName" --stack-status-filter CREATE_COMPLETE --no-paginate --output text)
+            export newid=$(aws cloudformation list-exports --query "Exports[?Name==`WorkflowID`].Value" --no-paginate --output text)
       - run:
           name: Remove old stacks and files
           command: |
-            export OldWorkflowID=$(aws cloudformation \
-                list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
-                --no-paginate --output text)
-            export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
-                --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
+            for i in $stacks; do
+              echo $i | grep -v $newid | awk -F '-' '{print $3}' >> ids.txt
+            done
 
-            echo $OldWorkflowID
-            echo $STACKS
+            cat ids.txt | sort -u >> oldids.txt
+            rm -f ids.txt
 
-            if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
-            then
-              echo "DELETING THE OLD STACKS AND S3 BUCKET (BLUE/GREEN DEPLOY)"
-              aws s3 rm "s3://udapeople-${OldWorkflowID}" --recursive
-              aws cloudformation delete-stack --stack-name udapeople-backend-${OldWorkflowID}
-              aws cloudformation delete-stack --stack-name udapeople-frontend-${OldWorkflowID}
-            fi
+            for stack in cat oldids.txt; do
+              aws s3 rm "s3://udapeople-$stack" --recursive
+              aws cloudformation delete-stack --stack-name udapeople-backend-$stack
+              aws cloudformation delete-stack --stack-name udapeople-frontend-$stack
+            done
 
 workflows:
   default:
@@ -478,19 +464,19 @@ workflows:
       #     requires: [build-backend]
       # - scan-frontend:
       #     requires: [build-frontend]
-      # - deploy-infrastructure
-      # #     requires: [build-frontend, build-backend]
-      # - configure-infrastructure:
-      #     requires: [deploy-infrastructure]
-      # - run-migrations:
-      #     requires: [configure-infrastructure]
-      # - deploy-frontend:
-      #     requires: [run-migrations]
-      # - deploy-backend:
-      #     requires: [deploy-frontend]
-      # - smoke-test:
-      #     requires: [deploy-frontend, deploy-backend]
-      # - cloudfront-update:
-      #     requires: [smoke-test]
-      - cleanup
-          # requires: [cloudfront-update]
+      - deploy-infrastructure
+      #     requires: [build-frontend, build-backend]
+      - configure-infrastructure:
+          requires: [deploy-infrastructure]
+      - run-migrations:
+          requires: [configure-infrastructure]
+      - deploy-frontend:
+          requires: [run-migrations]
+      - deploy-backend:
+          requires: [deploy-frontend]
+      - smoke-test:
+          requires: [deploy-frontend, deploy-backend]
+      - cloudfront-update:
+          requires: [smoke-test]
+      - cleanup:
+          requires: [cloudfront-update]
