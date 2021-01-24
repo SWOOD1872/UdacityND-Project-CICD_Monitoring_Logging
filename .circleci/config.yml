@@ -388,6 +388,7 @@ jobs:
           command: |
             oldworkflowid=$(aws cloudformation list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
               --no-paginate --output text)
+              echo "oldworkflowid ======= $oldworkflowid"
             curl -H "Content-Type: text/plain" -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request PUT \
               --data "$oldworkflowid" https://api.memstash.io/values/oldworkflowid
 
@@ -409,6 +410,8 @@ jobs:
               --request GET https://api.memstash.io/values/oldworkflowid)
             export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
                 --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
+            echo "OldWorkflowID ======= $OldWorkflowID"
+            echo "STACKS ======= $STACKS"
       - run:
           name: Remove old stacks and files
           command: |
@@ -417,8 +420,8 @@ jobs:
             export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
                 --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
 
-            echo $OldWorkflowID
-            echo $STACKS
+            echo "OldWorkflowID ======= $OldWorkflowID"
+            echo "STACKS ======= $STACKS"
 
             if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
             then
