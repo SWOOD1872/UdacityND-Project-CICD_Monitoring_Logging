@@ -425,7 +425,7 @@ jobs:
   #             aws cloudformation delete-stack --stack-name udapeople-frontend-${OldWorkflowID}
   #           fi
 
-cleanup:
+  cleanup:
     docker:
       - image: cimg/base:2020.01 
     steps:
