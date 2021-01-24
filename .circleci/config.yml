@@ -395,7 +395,7 @@ jobs:
             if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
             then
               echo "DELETING THE OLD STACKS AND S3 BUCKET (BLUE/GREEN DEPLOY)"
-              aws s3 rm s3://udapeople-${OldWorkflowID} --recursive
+              aws s3 rm "s3://udapeople-${OldWorkflowID}" --recursive
               aws cloudformation delete-stack --stack-name udapeople-backend-${OldWorkflowID}
               aws cloudformation delete-stack --stack-name udapeople-frontend-${OldWorkflowID}
             fi
