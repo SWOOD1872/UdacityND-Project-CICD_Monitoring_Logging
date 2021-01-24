@@ -386,7 +386,8 @@ jobs:
       - run:
           name: Get old stack workflow id
           command: |
-            export OldWorkflowID="$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request GET https://api.memstash.io/values/oldworkflowid)"
+            export OldWorkflowID="$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" \
+              --request GET https://api.memstash.io/values/oldworkflowid | awk '{print $1}')"
             export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
               --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
       - run:
@@ -395,6 +396,10 @@ jobs:
             if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
             then
               echo "DELETING THE OLD STACKS AND S3 BUCKET (BLUE/GREEN DEPLOY)"
+              echo "//////////////////////////////////////////////////////////////////"
+              echo "DEBUGGING:"
+              echo "aws s3 rm \"s3://udapeople-${OldWorkflowID}\" --recursive"
+              echo "//////////////////////////////////////////////////////////////////"
               aws s3 rm "s3://udapeople-${OldWorkflowID}" --recursive
               aws cloudformation delete-stack --stack-name udapeople-backend-${OldWorkflowID}
               aws cloudformation delete-stack --stack-name udapeople-frontend-${OldWorkflowID}
