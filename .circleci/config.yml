@@ -395,6 +395,8 @@ jobs:
           command: |
             export OldWorkflowID="$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" \
                 --request GET https://api.memstash.io/values/oldworkflowid | awk '{print $1}')"
+            export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
+              --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
 
             if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
             then
@@ -403,6 +405,7 @@ jobs:
               echo "DEBUGGING:"
               echo "aws s3 rm \"s3://udapeople-${OldWorkflowID}\" --recursive"
               echo $OldWorkflowID
+              echo $STACKS
               echo "//////////////////////////////////////////////////////////////////"
               aws s3 rm "s3://udapeople-${OldWorkflowID}" --recursive
               aws cloudformation delete-stack --stack-name udapeople-backend-${OldWorkflowID}
