@@ -333,7 +333,6 @@ jobs:
             if curl -s ${bucketurl} | grep "Welcome"
             then
               echo "frontend smoke test success"
-              exit 1
             else
               exit 1
             fi
