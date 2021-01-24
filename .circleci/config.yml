@@ -417,47 +417,25 @@ jobs:
               aws cloudformation delete-stack --stack-name udapeople-frontend-${OldWorkflowID}
             fi
 
-  # cleanup:
-  #   docker:
-  #     - image: cimg/base:2020.01 
-  #   steps:
-  #     - checkout
-  #     - run:
-  #         name: Get the new and old stack ID's
-  #         command: |
-  #           export stacks=$(aws cloudformation list-stacks --query "StackSummaries[*].StackName" --stack-status-filter CREATE_COMPLETE --no-paginate --output text)
-  #           export newid=$(aws cloudformation list-exports --query "Exports[?Name==`WorkflowID`].Value" --no-paginate --output text)
-  #     - run:
-  #         name: Remove old stacks and files
-  #         command: |
-  #           for i in $stacks; do
-  #             echo $i | grep -v $newid | awk -F '-' '{print $3}' >> ids.txt
-  #           done
-
-  #           cat ids.txt | sort -u >> oldids.txt
-  #           rm -f ids.txt
-
-  #           for stack in cat oldids.txt; do
-  #             aws s3 rm "s3://udapeople-$stack" --recursive
-  #             aws cloudformation delete-stack --stack-name udapeople-backend-$stack
-  #             aws cloudformation delete-stack --stack-name udapeople-frontend-$stack
-  #           done
-
 workflows:
   default:
     jobs:
-      # - build-frontend
-      # - build-backend
-      # - test-frontend:
-      #     requires: [build-frontend]
-      # - test-backend:
-      #     requires: [build-backend]
-      # - scan-backend:
-      #     requires: [build-backend]
-      # - scan-frontend:
-      #     requires: [build-frontend]
-      - deploy-infrastructure
-      #     requires: [build-frontend, build-backend]
+      - build-frontend
+      - build-backend
+      - test-frontend:
+          requires: [build-frontend]
+      - test-backend:
+          requires: [build-backend]
+      - scan-backend:
+          requires: [build-backend]
+      - scan-frontend:
+          requires: [build-frontend]
+      - deploy-infrastructure:
+          requires: [scan-frontend, scan-backend]
+          filters:
+            branches:
+              only:
+                - master
       - configure-infrastructure:
           requires: [deploy-infrastructure]
       - run-migrations:
