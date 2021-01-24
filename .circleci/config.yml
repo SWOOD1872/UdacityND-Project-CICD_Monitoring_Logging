@@ -209,8 +209,6 @@ jobs:
             echo "---"
             pwd
             echo "---"
-            hostname
-            echo "---"
             cat migration.log
       - run:
             name: Send migration results to memstash
