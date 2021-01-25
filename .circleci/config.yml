@@ -42,7 +42,11 @@ jobs:
           name: Build front-end
           command: |
             cd ./frontend
+
+            echo "INSTALLING NPM MODULE DEPENDENCIES"
             npm i
+
+            echo "BUILDING THE FRONTEND APPLICATION"
             npm run build
       - save_cache:
           paths: [frontend/node_modules]
@@ -58,9 +62,13 @@ jobs:
       - run:
           name: Back-end build
           command: |
-             cd ./backend
-             npm i
-             npm run build
+            cd ./backend
+
+            echo "INSTALLING NPM MODULE DEPENDENCIES"
+            npm i
+
+            echo "BUILDING THE BACKEND APPLICATION"
+            npm run build
       - save_cache:
           paths: [backend/node_modules]
           key: backend-build
@@ -76,7 +84,11 @@ jobs:
           name: Test front-end
           command: |
             cd ./frontend
+
+            echo "INSTALLING DEPENDENCIES"
             sudo npm install oauth-sign
+
+            echo "RUNNING TEST SUITE"
             npm run test
                 
   test-backend:
@@ -90,6 +102,8 @@ jobs:
           name: Test back-end
           command: |
             cd ./backend
+
+            echo "RUNNING TEST SUITE"
             npm run test
             
   scan-frontend:
@@ -103,6 +117,8 @@ jobs:
           name: Analyse front-end
           command: |
             cd ./frontend
+
+            echo "RUNNING FRONTEND SECURITY VULNERABILITY SCAN"
             npm audit fix --audit-level=critical --force
 
   scan-backend:
@@ -116,6 +132,8 @@ jobs:
           name: Analyse back-end
           command: |
             cd ./backend
+
+            echo "RUNNING BACKEND SECURITY VULNERABILITY SCAN"
             npm audit fix --audit-level=critical --force
 
   deploy-infrastructure:
@@ -146,19 +164,24 @@ jobs:
       - run:
           name: Add back-end ip to ansible inventory
           command: |
-            cwid=$(echo "aws ec2 describe-instances --filters 'Name=tag:project,Values=udapeople-backend_${CIRCLE_WORKFLOW_ID:0:7}' \
+            echo "RETRIEVING THE IP ADDRESS OF THE BACKEND EC2 INSTANCE"
+            workflowidip=$(echo "aws ec2 describe-instances --filters 'Name=tag:project,Values=udapeople-backend_${CIRCLE_WORKFLOW_ID:0:7}' \
               --query 'Reservations[*].Instances[*].PublicIpAddress' --output text")
-            echo $cwid > backip.sh; chmod 755 backip.sh
-            ./backip.sh >> .circleci/ansible/inventory.txt
-            backendip=$(./backip.sh)
+            echo $workflowidip > backendip.sh; chmod 755 backip.sh
+            echo "POPULATING ANSIBLE INVENTORY FOR FUTURE SERVER CONFIGURATIONS STEPS"
+            ./backendip.sh >> .circleci/ansible/inventory.txt
+            backendip=$(./backendip.sh)
+            echo "STORING THE IP ADDRESS OF THE BACKEND EC2 INSTANCE IN MEMSTASH FOR LATER USE"
             curl -H "Content-Type: text/plain" -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request PUT --data "$backendip" \
               https://api.memstash.io/values/backendip_${CIRCLE_WORKFLOW_ID:0:7}
             
-            cwid2=$(echo "aws ec2 describe-instances --filters 'Name=tag:project,Values="udapeople-backend_${CIRCLE_WORKFLOW_ID:0:7}"' \
+            echo "RETRIEVING THE PUBLIC DNS NAME OF THE BACKEND EC2 INSTANCE"
+            workflowiddns=$(echo "aws ec2 describe-instances --filters 'Name=tag:project,Values="udapeople-backend_${CIRCLE_WORKFLOW_ID:0:7}"' \
               --query 'Reservations[*].Instances[*].PublicDnsName' --output text")
-            echo $cwid2 > backurl.sh; chmod 755 backurl.sh
-            backendurl=$(./backurl.sh)
-            curl -H "Content-Type: text/plain" -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request PUT --data "$backendurl" \
+            echo $workflowiddns > backenddns.sh; chmod 755 backurl.sh
+            backenddnsurl=$(./backenddns.sh)
+            echo "STORING THE PUBLIC DNS NAME OF THE BACKEND EC2 INSTANCE IN MEMSTASH FOR LATER USE"
+            curl -H "Content-Type: text/plain" -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request PUT --data "$backenddnsurl" \
               https://api.memstash.io/values/url_${CIRCLE_WORKFLOW_ID:0:7}
       - persist_to_workspace:
           root: .circleci
@@ -195,6 +218,7 @@ jobs:
           name: Run migrations
           working_directory: ./backend
           command: |
+            echo "BUILDING THE BACKEND ENVIRONMENT FILE FOR POSTGRES MIGRATIONS"
             echo ENVIROMENT=production > .env
             echo TYPEORM_CONNECTION=postgres >> .env
             echo TYPEORM_MIGRATIONS_DIR=./src/migrations >> .env
@@ -205,20 +229,29 @@ jobs:
             echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> .env
             echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> .env
             echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> .env
+
+            echo "INSTALLING NPM MODULE DEPENDENCIES"
             npm i > npminstall.log
+
+            echo "INSTALLING OATH-SIGN PACKAGE"
             npm install oauth-sign >> npminstall.log
+
+            echo "RUNNING POSTGRES DATABASE MIGRATIONS"
             npm run migrations > migration.log
       - run:
             name: Send migration results to memstash
             working_directory: ./backend
             command: |
               if [[ $(grep -i "has been executed successfully" migration.log | wc -l) -ge 1 ]]; then
+                echo "SUCCESSFULLY EXECUTED THE DATABASE MIGRATIONS"
                 curl -H "Content-Type: text/plain" -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request PUT \
                   --data "Migration successful" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID:0:7}
               else
+                echo "FAILED TO RUN THE DATABASE MIGRATIONS"
                 curl -H "Content-Type: text/plain" -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request PUT \
                   --data "Migration failed" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID:0:7}
               fi
+              echo "STORING THE RESULTS OF THE DATABASE MIGRATIONS IN MEMSTASH FOR LATER EVALUATION"
       - destroy-environment
 
   deploy-frontend:
@@ -229,8 +262,16 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            sudo apt-get -y -qq update
-            sudo apt-get -y -qq install python3
+            echo "UPDATING THE PACKAGE DATABASE"
+            sudo apt-get -y update
+
+            echo "UPGRADING THE PACKAGE DATABASE"
+            sudo apt-get -y upgrade
+
+            echo "INSTALLING PYTHON3"
+            sudo apt-get -y install python3
+
+            echo "INSTALLING THE AWS CLI FROM AMAZON"
             curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
             unzip awscliv2.zip
             sudo ./aws/install
@@ -245,10 +286,18 @@ jobs:
           command: |
             export API_URL=$(echo "https://$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request GET \
               https://api.memstash.io/values/url_${CIRCLE_WORKFLOW_ID:0:7}):3030")
+            
+            echo "INSTALLING NPM MODULE DEPENDENCIES"
             npm i
+
+            echo "BUILDING THE APPLICATION"
             npm run build
+
+            echo "DEPLOYING THE FRONT END APPLICATION CODE TO S3"
             bucket=$(echo "udapeople-${CIRCLE_WORKFLOW_ID:0:7}")
             aws s3 sync dist s3://${bucket}/
+
+            echo "STORING THE FRONT END S3 BUCKET URL IN MEMSTASH FOR LATER USE"
             bucketurl="$(echo "http://$bucket.s3-website-us-west-2.amazonaws.com")"
             curl -H "Content-Type: text/plain" -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request PUT \
               --data "$bucketurl" https://api.memstash.io/values/bucketurl
@@ -285,6 +334,8 @@ jobs:
             echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> $envfile
             echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> $envfile
             tar -cvf backend.tar backend
+            
+            echo "DEPLOYING THE APPLICATION BACKEND"
             ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i ansible/inventory.txt .circleci/ansible/deploy-backend.yml
       - destroy-environment
 
@@ -298,8 +349,7 @@ jobs:
           command: |
             sudo apt-get update
             sudo apt-get upgrade
-            sudo apt-get -y install less
-            sudo apt-get -y install curl
+            sudo apt-get -y install less curl
             curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
             unzip awscliv2.zip
             sudo ./aws/install
@@ -312,18 +362,15 @@ jobs:
       - run:
           name: Backend smoke test.
           command: |
+            echo "RUNNING A BACKEND SMOKE TEST"
             BACKEND_URL="http://$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request GET \
               https://api.memstash.io/values/backendip_${CIRCLE_WORKFLOW_ID:0:7} | head -1):3030"
             curl "$BACKEND_URL/api/status"
       - run:
           name: Frontend smoke test.
           command: |
+            echo "RUNNING A FRONTEND SMOKE TEST"
             export bucketurl=$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request GET https://api.memstash.io/values/bucketurl)
-            echo "////////////////////////////////////////////////////////////////"
-            echo "DEBUGGING:"
-            echo "bucket url..................."
-            echo $bucketurl
-            echo "////////////////////////////////////////////////////////////////"
             if curl -s ${bucketurl} | grep "Welcome"
             then
               echo "FRONTEND SMOKE TEST SUCCESS"
@@ -342,21 +389,25 @@ jobs:
       - run:
           name: Update cloudfront distribution
           command: |
+            echo "IDENTIFYING OLD WORKFLOW ID FROM EXISTING CLOUDFORMATION EXPORTS"
             oldworkflowid=$(aws cloudformation list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
               --no-paginate --output text)
-              echo "oldworkflowid ======= $oldworkflowid"
+
+            echo "STORING OLD WORKFLOW ID IN MEMSTASH SO WE CAN CLEANUP THE OLD INFRA AFTER BLUE/GREEN DEPLOYMENT"
             curl -H "Content-Type: text/plain" -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request PUT \
               --data "$oldworkflowid" https://api.memstash.io/values/oldworkflowid_${CIRCLE_WORKFLOW_ID:0:7}
 
             existingwid=$(aws cloudformation list-exports --query "Exports[?Name==\`WorkflowID\`].Value" --no-paginate --output text)
-            if [ -z $existingwid ]
+            if [[ -z $existingwid ]]
             then
+              echo "DEPLOYING THE CLOUDFRONT STACK AS NEW"
               aws cloudformation deploy \
               --template-file .circleci/files/cloudfront.yml \
               --region ${AWS_DEFAULT_REGION} \
               --stack-name "UdacityNDP3UdaPeople" \
               --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}"
             else
+              echo "UPDATING EXISTING CLOUDFRONT STACK WITH THE WORKFLOW ID"
               aws cloudformation update-stack \
                 --use-previous-template \
                 --stack-name UdacityNDP3UdaPeople \
@@ -369,15 +420,9 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Get old stack workflow id
-          command: |
-            export OldWorkflowID=$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" \
-              --request GET https://api.memstash.io/values/oldworkflowid_${CIRCLE_WORKFLOW_ID:0:7})
-            export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
-                --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
-      - run:
           name: Remove old stacks and files
           command: |
+            echo "RETRIEVING OLD WORKFLOW ID FROM MEMSTASH"
             export OldWorkflowID=$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" \
               --request GET https://api.memstash.io/values/oldworkflowid_${CIRCLE_WORKFLOW_ID:0:7})
             export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
@@ -390,22 +435,24 @@ jobs:
               aws cloudformation delete-stack --stack-name udapeople-backend-${OldWorkflowID}
               aws cloudformation delete-stack --stack-name udapeople-frontend-${OldWorkflowID}
             fi
+          
+            echo "CLEANUP COMPLETE"
 
 workflows:
   default:
     jobs:
-      # - build-frontend
-      # - build-backend
-      # - test-frontend:
-      #     requires: [build-frontend]
-      # - test-backend:
-      #     requires: [build-backend]
-      # - scan-backend:
-      #     requires: [build-backend]
-      # - scan-frontend:
-      #     requires: [build-frontend]
+      - build-frontend
+      - build-backend
+      - test-frontend:
+          requires: [build-frontend]
+      - test-backend:
+          requires: [build-backend]
+      - scan-backend:
+          requires: [build-backend]
+      - scan-frontend:
+          requires: [build-frontend]
       - deploy-infrastructure:
-          # requires: [scan-frontend, scan-backend, test-backend, test-frontend]
+          requires: [scan-frontend, scan-backend, test-backend, test-frontend]
           filters:
             branches:
               only:
