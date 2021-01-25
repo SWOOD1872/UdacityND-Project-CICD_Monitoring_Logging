@@ -118,6 +118,9 @@ jobs:
           command: |
             cd ./frontend
 
+            echo "INSTALL NODE_MODULE DEPENDENCIES"
+            npm i
+
             echo "RUNNING FRONTEND SECURITY VULNERABILITY SCAN"
             npm audit fix --audit-level=critical --force
 
@@ -132,6 +135,9 @@ jobs:
           name: Analyse back-end
           command: |
             cd ./backend
+
+            echo "INSTALL NODE_MODULE DEPENDENCIES"
+            npm i
 
             echo "RUNNING BACKEND SECURITY VULNERABILITY SCAN"
             npm audit fix --audit-level=critical --force
