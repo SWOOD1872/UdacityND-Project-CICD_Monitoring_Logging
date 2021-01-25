@@ -282,11 +282,6 @@ jobs:
             unzip awscliv2.zip
             sudo ./aws/install
       - run:
-          name: Get backend url
-          command: |
-            url1="$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request GET https://api.memstash.io/values/url_${CIRCLE_WORKFLOW_ID:0:7})"
-            export API_URL=$(echo "http://${url1}:3030")
-      - run:
           name: Deploy frontend objects
           working_directory: ./frontend
           command: |
