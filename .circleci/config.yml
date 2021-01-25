@@ -167,7 +167,7 @@ jobs:
             echo "RETRIEVING THE IP ADDRESS OF THE BACKEND EC2 INSTANCE"
             workflowidip=$(echo "aws ec2 describe-instances --filters 'Name=tag:project,Values=udapeople-backend_${CIRCLE_WORKFLOW_ID:0:7}' \
               --query 'Reservations[*].Instances[*].PublicIpAddress' --output text")
-            echo $workflowidip > backendip.sh; chmod 755 backip.sh
+            echo $workflowidip > backendip.sh; chmod 755 backendip.sh
             echo "POPULATING ANSIBLE INVENTORY FOR FUTURE SERVER CONFIGURATIONS STEPS"
             ./backendip.sh >> .circleci/ansible/inventory.txt
             backendip=$(./backendip.sh)
@@ -178,7 +178,7 @@ jobs:
             echo "RETRIEVING THE PUBLIC DNS NAME OF THE BACKEND EC2 INSTANCE"
             workflowiddns=$(echo "aws ec2 describe-instances --filters 'Name=tag:project,Values="udapeople-backend_${CIRCLE_WORKFLOW_ID:0:7}"' \
               --query 'Reservations[*].Instances[*].PublicDnsName' --output text")
-            echo $workflowiddns > backenddns.sh; chmod 755 backurl.sh
+            echo $workflowiddns > backenddns.sh; chmod 755 backenddns.sh
             backenddnsurl=$(./backenddns.sh)
             echo "STORING THE PUBLIC DNS NAME OF THE BACKEND EC2 INSTANCE IN MEMSTASH FOR LATER USE"
             curl -H "Content-Type: text/plain" -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request PUT --data "$backenddnsurl" \
