@@ -1,5 +1,5 @@
 URL01: https://github.com/SWOOD1872/UdacityND-Project-CICD_Monitoring_Logging
-URL02: http://udapeople-b9c57bb.s3-website-us-west-2.amazonaws.com/
-URL03: d1qsqr0oa6tfer.cloudfront.net
-URL04: http://ec2-52-34-216-241.us-west-2.compute.amazonaws.com:3030/
+URL02: http://udapeople-55c2fb6.s3-website-us-west-2.amazonaws.com
+URL03: d26wqkrid3xx2f.cloudfront.net
+URL04: http://ec2-34-221-143-172.us-west-2.compute.amazonaws.com:3030/
 URL05: http://ec2-34-222-8-26.us-west-2.compute.amazonaws.com:9090/targets
