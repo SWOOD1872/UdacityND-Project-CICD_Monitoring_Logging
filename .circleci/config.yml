@@ -377,38 +377,6 @@ jobs:
       - revert-migrations
 
   cloudfront-update:
-    # docker:
-    #   - image: amazon/aws-cli
-    # steps:
-    #   - checkout
-    #   - run:
-    #       name: Update cloudfront distribution
-    #       command: |
-    #         echo "IDENTIFYING OLD WORKFLOW ID FROM EXISTING CLOUDFORMATION EXPORTS"
-    #         oldworkflowid=$(aws cloudformation list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
-    #           --no-paginate --output text)
-
-    #         echo "STORING OLD WORKFLOW ID IN MEMSTASH SO WE CAN CLEANUP THE OLD INFRA AFTER BLUE/GREEN DEPLOYMENT"
-    #         curl -H "Content-Type: text/plain" -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request PUT \
-    #           --data "$oldworkflowid" https://api.memstash.io/values/oldworkflowid_${CIRCLE_WORKFLOW_ID:0:7}
-
-    #         existingwid=$(aws cloudformation list-exports --query "Exports[?Name==\`WorkflowID\`].Value" --no-paginate --output text)
-    #         if [[ -z $existingwid ]]
-    #         then
-    #           echo "DEPLOYING THE CLOUDFRONT STACK AS NEW"
-    #           aws cloudformation deploy \
-    #           --template-file .circleci/files/cloudfront.yml \
-    #           --region ${AWS_DEFAULT_REGION} \
-    #           --stack-name "UdacityNDP3UdaPeople" \
-    #           --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}"
-    #         else
-    #           echo "UPDATING EXISTING CLOUDFRONT STACK WITH THE WORKFLOW ID"
-    #           aws cloudformation update-stack \
-    #             --use-previous-template \
-    #             --stack-name UdacityNDP3UdaPeople \
-    #             --parameters ParameterKey=WorkflowID,ParameterValue=${CIRCLE_WORKFLOW_ID:0:7},UsePreviousValue=false
-    #         fi
-
     docker:
       - image: amazon/aws-cli
     steps:
@@ -424,12 +392,22 @@ jobs:
             curl -H "Content-Type: text/plain" -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request PUT \
               --data "$oldworkflowid" https://api.memstash.io/values/oldworkflowid_${CIRCLE_WORKFLOW_ID:0:7}
 
-            echo "DEPLOYING THE CLOUDFRONT STACK"
-            aws cloudformation deploy \
-            --template-file .circleci/files/cloudfront.yml \
-            --region ${AWS_DEFAULT_REGION} \
-            --stack-name "UdacityNDP3UdaPeople" \
-            --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}"
+            existingwid=$(aws cloudformation list-exports --query "Exports[?Name==\`WorkflowID\`].Value" --no-paginate --output text)
+            if [[ -z $existingwid ]]
+            then
+              echo "DEPLOYING THE CLOUDFRONT STACK AS NEW"
+              aws cloudformation deploy \
+              --template-file .circleci/files/cloudfront.yml \
+              --region ${AWS_DEFAULT_REGION} \
+              --stack-name "UdacityNDP3UdaPeople" \
+              --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}"
+            else
+              echo "UPDATING EXISTING CLOUDFRONT STACK WITH THE WORKFLOW ID"
+              aws cloudformation update-stack \
+                --use-previous-template \
+                --stack-name UdacityNDP3UdaPeople \
+                --parameters ParameterKey=WorkflowID,ParameterValue=${CIRCLE_WORKFLOW_ID:0:7},UsePreviousValue=false
+            fi
 
   cleanup:
     docker:
@@ -458,18 +436,18 @@ jobs:
 workflows:
   default:
     jobs:
-      # - build-frontend
-      # - build-backend
-      # - test-frontend:
-      #     requires: [build-frontend]
-      # - test-backend:
-      #     requires: [build-backend]
-      # - scan-backend:
-      #     requires: [build-backend]
-      # - scan-frontend:
-      #     requires: [build-frontend]
+      - build-frontend
+      - build-backend
+      - test-frontend:
+          requires: [build-frontend]
+      - test-backend:
+          requires: [build-backend]
+      - scan-backend:
+          requires: [build-backend]
+      - scan-frontend:
+          requires: [build-frontend]
       - deploy-infrastructure:
-          # requires: [scan-frontend, scan-backend, test-backend, test-frontend]
+          requires: [scan-frontend, scan-backend, test-backend, test-frontend]
           filters:
             branches:
               only:
