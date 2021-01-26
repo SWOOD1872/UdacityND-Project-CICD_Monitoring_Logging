@@ -285,7 +285,7 @@ jobs:
           name: Deploy frontend objects
           working_directory: ./frontend
           command: |
-            export API_URL=$(echo "https://$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request GET \
+            export API_URL=$(echo "http://$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request GET \
               https://api.memstash.io/values/url_${CIRCLE_WORKFLOW_ID:0:7}):3030")
             
             echo "INSTALLING NPM MODULE DEPENDENCIES"
@@ -299,7 +299,7 @@ jobs:
             aws s3 sync dist s3://${bucket}/
 
             echo "STORING THE FRONT END S3 BUCKET URL IN MEMSTASH FOR LATER USE"
-            bucketurl="$(echo "https://$bucket.s3-website-us-west-2.amazonaws.com")"
+            bucketurl="$(echo "http://$bucket.s3-website-us-west-2.amazonaws.com")"
             curl -H "Content-Type: text/plain" -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request PUT \
               --data "$bucketurl" https://api.memstash.io/values/bucketurl
       - destroy-environment
@@ -355,16 +355,10 @@ jobs:
             unzip awscliv2.zip
             sudo ./aws/install
       - run:
-          name: Get backend url
-          command: |
-            export API_URL=$(echo "https://$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request GET \
-              https://api.memstash.io/values/url_${CIRCLE_WORKFLOW_ID:0:7}):3030")
-            echo $API_URL
-      - run:
           name: Backend smoke test.
           command: |
             echo "RUNNING A BACKEND SMOKE TEST"
-            BACKEND_URL="https://$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request GET \
+            BACKEND_URL="http://$(curl -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request GET \
               https://api.memstash.io/values/backendip_${CIRCLE_WORKFLOW_ID:0:7} | head -1):3030"
             curl "$BACKEND_URL/api/status"
       - run:
@@ -383,6 +377,38 @@ jobs:
       - revert-migrations
 
   cloudfront-update:
+    # docker:
+    #   - image: amazon/aws-cli
+    # steps:
+    #   - checkout
+    #   - run:
+    #       name: Update cloudfront distribution
+    #       command: |
+    #         echo "IDENTIFYING OLD WORKFLOW ID FROM EXISTING CLOUDFORMATION EXPORTS"
+    #         oldworkflowid=$(aws cloudformation list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
+    #           --no-paginate --output text)
+
+    #         echo "STORING OLD WORKFLOW ID IN MEMSTASH SO WE CAN CLEANUP THE OLD INFRA AFTER BLUE/GREEN DEPLOYMENT"
+    #         curl -H "Content-Type: text/plain" -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request PUT \
+    #           --data "$oldworkflowid" https://api.memstash.io/values/oldworkflowid_${CIRCLE_WORKFLOW_ID:0:7}
+
+    #         existingwid=$(aws cloudformation list-exports --query "Exports[?Name==\`WorkflowID\`].Value" --no-paginate --output text)
+    #         if [[ -z $existingwid ]]
+    #         then
+    #           echo "DEPLOYING THE CLOUDFRONT STACK AS NEW"
+    #           aws cloudformation deploy \
+    #           --template-file .circleci/files/cloudfront.yml \
+    #           --region ${AWS_DEFAULT_REGION} \
+    #           --stack-name "UdacityNDP3UdaPeople" \
+    #           --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}"
+    #         else
+    #           echo "UPDATING EXISTING CLOUDFRONT STACK WITH THE WORKFLOW ID"
+    #           aws cloudformation update-stack \
+    #             --use-previous-template \
+    #             --stack-name UdacityNDP3UdaPeople \
+    #             --parameters ParameterKey=WorkflowID,ParameterValue=${CIRCLE_WORKFLOW_ID:0:7},UsePreviousValue=false
+    #         fi
+
     docker:
       - image: amazon/aws-cli
     steps:
@@ -398,22 +424,12 @@ jobs:
             curl -H "Content-Type: text/plain" -H "token: c1b1e3ca-9ad3-4e51-a6ba-8693a7450b4e" --request PUT \
               --data "$oldworkflowid" https://api.memstash.io/values/oldworkflowid_${CIRCLE_WORKFLOW_ID:0:7}
 
-            existingwid=$(aws cloudformation list-exports --query "Exports[?Name==\`WorkflowID\`].Value" --no-paginate --output text)
-            if [[ -z $existingwid ]]
-            then
-              echo "DEPLOYING THE CLOUDFRONT STACK AS NEW"
-              aws cloudformation deploy \
-              --template-file .circleci/files/cloudfront.yml \
-              --region ${AWS_DEFAULT_REGION} \
-              --stack-name "UdacityNDP3UdaPeople" \
-              --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}"
-            else
-              echo "UPDATING EXISTING CLOUDFRONT STACK WITH THE WORKFLOW ID"
-              aws cloudformation update-stack \
-                --use-previous-template \
-                --stack-name UdacityNDP3UdaPeople \
-                --parameters ParameterKey=WorkflowID,ParameterValue=${CIRCLE_WORKFLOW_ID:0:7},UsePreviousValue=false
-            fi
+            echo "DEPLOYING THE CLOUDFRONT STACK"
+            aws cloudformation deploy \
+            --template-file .circleci/files/cloudfront.yml \
+            --region ${AWS_DEFAULT_REGION} \
+            --stack-name "UdacityNDP3UdaPeople" \
+            --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}"
 
   cleanup:
     docker:
