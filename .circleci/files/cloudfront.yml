@@ -5,7 +5,6 @@ Parameters:
   WorkflowID:
     Description: Unique identifier.
     Type: String
-    Default: kk1j287dhjppmz430
 
 Resources:
   CloudFrontOriginAccessIdentity:
@@ -21,8 +20,10 @@ Resources:
         Origins:
           - DomainName: !Sub "udapeople-${WorkflowID}.s3-website-us-west-2.amazonaws.com"
             Id: webpage
-            S3OriginConfig:
-              OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${CloudFrontOriginAccessIdentity}"
+            CustomOriginConfig:
+              HTTPPort: 80
+              HTTPSPort: 443
+              OriginProtocolPolicy: http-only
         Enabled: True
         DefaultRootObject: index.html
         DefaultCacheBehavior:
